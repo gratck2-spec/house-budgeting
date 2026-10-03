@@ -1,5 +1,12 @@
 -- Create tables for Catatan Bangun Rumah (single-user, no RLS)
 
+-- Drop existing tables (in reverse dependency order)
+drop table if exists attendance;
+drop table if exists advances;
+drop table if exists workers;
+drop table if exists expenses;
+drop table if exists settings;
+
 -- Workers table
 create table workers (
   id uuid primary key default gen_random_uuid(),
