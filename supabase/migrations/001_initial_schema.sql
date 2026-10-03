@@ -16,6 +16,7 @@ create table workers (
   active boolean not null default true,
   created_at timestamptz not null default now()
 );
+alter table workers disable row level security;
 
 -- Attendance table
 create table attendance (
@@ -28,6 +29,7 @@ create table attendance (
   created_at timestamptz not null default now(),
   unique (worker_id, work_date)
 );
+alter table attendance disable row level security;
 
 -- Advances (kasbon) table
 create table advances (
@@ -38,6 +40,7 @@ create table advances (
   note text,
   created_at timestamptz not null default now()
 );
+alter table advances disable row level security;
 
 -- Expenses table
 create table expenses (
@@ -50,6 +53,7 @@ create table expenses (
   payroll_period text,
   created_at timestamptz not null default now()
 );
+alter table expenses disable row level security;
 
 -- Settings table
 create table settings (
@@ -57,3 +61,4 @@ create table settings (
   total_budget bigint not null default 0,
   week_start int not null default 1
 );
+alter table settings disable row level security;
