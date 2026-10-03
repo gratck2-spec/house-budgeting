@@ -13,10 +13,27 @@ export async function getSettings() {
 
 export async function updateBudget(totalBudget: number) {
   const supabase = await createClient();
-  const { error } = await supabase
+
+  // Get existing settings row
+  const { data: existing } = await supabase
     .from('settings')
-    .upsert({ total_budget: totalBudget }, { onConflict: 'owner_id' });
-  if (error) return { error: error.message };
+    .select('id')
+    .limit(1)
+    .single();
+
+  if (existing) {
+    const { error } = await supabase
+      .from('settings')
+      .update({ total_budget: totalBudget })
+      .eq('id', existing.id);
+    if (error) return { error: error.message };
+  } else {
+    const { error } = await supabase
+      .from('settings')
+      .insert({ total_budget: totalBudget });
+    if (error) return { error: error.message };
+  }
+
   return { success: true };
 }
 
