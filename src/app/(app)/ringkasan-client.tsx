@@ -1,37 +1,28 @@
-'use client';
+"use client";
 
-import { useState, useTransition } from 'react';
-import { updateBudget } from './actions';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { formatRupiah } from '@/lib/money';
-import { toast } from 'sonner';
-import { Settings } from 'lucide-react';
+import { useState, useTransition } from "react";
+import { updateBudget } from "./actions";
+import { PageHeader } from "@/components/page-header";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent } from "@/components/ui/card";
+import { cnCategoryColor } from "@/lib/category-colors";
+import { formatRupiah } from "@/lib/money";
+import { toast } from "sonner";
+import { LayoutDashboard, Wallet, ArrowDown, Settings2, TrendingUp, AlertCircle } from "lucide-react";
 
 interface CategoryData {
   category: string;
   total: number;
 }
 
-const categoryColors: Record<string, string> = {
-  Material: 'bg-blue-500',
-  'Upah tukang': 'bg-green-500',
-  Alat: 'bg-yellow-500',
-  Transport: 'bg-purple-500',
-  Konsumsi: 'bg-orange-500',
-  Perizinan: 'bg-pink-500',
-  Lainnya: 'bg-gray-500',
-};
-
-export function RingkasanClient({
-  totalBudget,
-  categoryData,
-}: {
+interface RingkasanClientProps {
   totalBudget: number;
   categoryData: CategoryData[];
-}) {
+}
+
+export function RingkasanClient({ totalBudget, categoryData }: RingkasanClientProps) {
   const [showSettings, setShowSettings] = useState(false);
   const [budgetInput, setBudgetInput] = useState(String(totalBudget));
   const [isPending, startTransition] = useTransition();
@@ -39,6 +30,7 @@ export function RingkasanClient({
   const totalSpent = categoryData.reduce((sum, c) => sum + c.total, 0);
   const remaining = totalBudget - totalSpent;
   const percentage = totalBudget > 0 ? Math.min((totalSpent / totalBudget) * 100, 100) : 0;
+  const isOverBudget = remaining < 0;
 
   async function handleSaveBudget() {
     startTransition(async () => {
@@ -46,90 +38,97 @@ export function RingkasanClient({
       if (result.error) {
         toast.error(result.error);
       } else {
-        toast.success('Anggaran diperbarui');
+        toast.success("Anggaran diperbarui");
         setShowSettings(false);
       }
     });
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Ringkasan</h1>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setShowSettings(!showSettings)}
-        >
-          <Settings className="h-5 w-5" />
-        </Button>
-      </div>
+    <div className="space-y-5">
+      <PageHeader
+        icon={LayoutDashboard}
+        title="Ringkasan"
+        subtitle="Pantau anggaran dan pengeluaran bangunan"
+        action={
+          <Button
+            variant="ghost"
+            size="icon"
+            className="rounded-full"
+            onClick={() => {
+              setBudgetInput(String(totalBudget));
+              setShowSettings(!showSettings);
+            }}
+          >
+            <Settings2 className="h-5 w-5" />
+          </Button>
+        }
+      />
 
       {showSettings && (
-        <Card>
-          <CardContent className="p-4">
-            <div className="space-y-3">
-              <div className="space-y-1">
-                <Label>Total Anggaran (Rp)</Label>
-                <Input
-                  type="number"
-                  value={budgetInput}
-                  onChange={(e) => setBudgetInput(e.target.value)}
-                  min={0}
-                />
-              </div>
-              <div className="flex gap-2">
-                <Button onClick={handleSaveBudget} disabled={isPending} className="flex-1">
-                  {isPending ? 'Menyimpan...' : 'Simpan'}
-                </Button>
-                <Button variant="outline" onClick={() => setShowSettings(false)}>
-                  Batal
-                </Button>
-              </div>
+        <Card className="overflow-hidden border-primary/20">
+          <CardContent className="p-4 space-y-4">
+            <div className="space-y-2">
+              <Label className="text-foreground font-medium">Total Anggaran (Rp)</Label>
+              <Input
+                type="number"
+                value={budgetInput}
+                onChange={(e) => setBudgetInput(e.target.value)}
+                min={0}
+                className="h-12 text-lg"
+                placeholder="0"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={handleSaveBudget} disabled={isPending} className="flex-1 h-11">
+                {isPending ? "Menyimpan..." : "Simpan Anggaran"}
+              </Button>
+              <Button variant="outline" onClick={() => setShowSettings(false)} className="h-11">
+                Batal
+              </Button>
             </div>
           </CardContent>
         </Card>
       )}
 
-      <div className="grid grid-cols-2 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-muted-foreground">Anggaran</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-lg font-semibold">{formatRupiah(totalBudget)}</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-muted-foreground">Total Keluar</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-lg font-semibold">{formatRupiah(totalSpent)}</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm text-muted-foreground">Sisa Anggaran</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className={`text-2xl font-bold ${remaining < 0 ? 'text-red-600' : 'text-green-600'}`}>
-            {formatRupiah(remaining)}
-          </p>
-          {totalBudget > 0 && (
-            <div className="mt-2">
-              <div className="flex justify-between text-xs text-muted-foreground mb-1">
-                <span>{Math.round(percentage)}% terpakai</span>
-                <span>{formatRupiah(totalBudget - totalSpent)} tersisa</span>
+      {/* Hero Sisa Anggaran */}
+      <Card
+        className={`overflow-hidden border-0 shadow-lg ${
+          isOverBudget
+            ? "bg-gradient-to-br from-[#B44A3E] to-[#8B3A30] text-white"
+            : "bg-gradient-to-br from-[#C2703E] to-[#A85D33] text-white"
+        }`}
+      >
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2 text-white/90">
+              <Wallet className="h-5 w-5" />
+              <span className="text-sm font-medium">Sisa Anggaran</span>
+            </div>
+            {isOverBudget ? (
+              <div className="flex items-center gap-1 text-white/90 text-xs bg-white/20 px-2 py-1 rounded-full">
+                <AlertCircle className="h-3 w-3" />
+                Over budget
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2.5">
+            ) : percentage > 75 ? (
+              <div className="flex items-center gap-1 text-white/90 text-xs bg-white/20 px-2 py-1 rounded-full">
+                <TrendingUp className="h-3 w-3" />
+                {Math.round(percentage)}% terpakai
+              </div>
+            ) : null}
+          </div>
+          <p className="text-4xl font-heading font-bold tracking-tight mb-3">
+            {formatRupiah(Math.abs(remaining))}
+          </p>
+          {!isOverBudget && totalBudget > 0 && (
+            <div className="space-y-2">
+              <div className="flex justify-between text-xs text-white/80">
+                <span>{formatRupiah(totalSpent)} terpakai</span>
+                <span>{formatRupiah(totalBudget)} total</span>
+              </div>
+              <div className="w-full bg-white/25 rounded-full h-2">
                 <div
-                  className={`h-2.5 rounded-full transition-all ${
-                    percentage > 90 ? 'bg-red-500' : percentage > 70 ? 'bg-yellow-500' : 'bg-green-500'
-                  }`}
+                  className="bg-white h-2 rounded-full transition-all duration-500"
                   style={{ width: `${percentage}%` }}
                 />
               </div>
@@ -138,21 +137,56 @@ export function RingkasanClient({
         </CardContent>
       </Card>
 
+      {/* Stats Grid */}
+      <div className="grid grid-cols-2 gap-3">
+        <Card className="border-border/60">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 text-muted-foreground mb-2">
+              <Wallet className="h-4 w-4 text-primary" />
+              <span className="text-xs font-medium uppercase tracking-wide">Anggaran</span>
+            </div>
+            <p className="text-xl font-bold text-foreground">{formatRupiah(totalBudget)}</p>
+          </CardContent>
+        </Card>
+        <Card className="border-border/60">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 text-muted-foreground mb-2">
+              <ArrowDown className="h-4 w-4 text-destructive" />
+              <span className="text-xs font-medium uppercase tracking-wide">Total Keluar</span>
+            </div>
+            <p className="text-xl font-bold text-foreground">{formatRupiah(totalSpent)}</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Category Breakdown */}
       {categoryData.length > 0 && (
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Pengeluaran per Kategori</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {categoryData.map((cat) => (
-              <div key={cat.category} className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className={`w-3 h-3 rounded-full ${categoryColors[cat.category] ?? 'bg-gray-400'}`} />
-                  <span className="text-sm">{cat.category}</span>
-                </div>
-                <span className="text-sm font-medium">{formatRupiah(cat.total)}</span>
-              </div>
-            ))}
+        <Card className="border-border/60">
+          <CardContent className="p-5">
+            <h3 className="font-heading font-bold text-lg mb-4">Pengeluaran per Kategori</h3>
+            <div className="space-y-4">
+              {categoryData.map((cat) => {
+                const catPercentage = totalSpent > 0 ? (cat.total / totalSpent) * 100 : 0;
+                return (
+                  <div key={cat.category} className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${cnCategoryColor(cat.category)}`}>
+                          {cat.category}
+                        </span>
+                      </div>
+                      <span className="text-sm font-bold">{formatRupiah(cat.total)}</span>
+                    </div>
+                    <div className="w-full bg-muted rounded-full h-2">
+                      <div
+                        className={`h-2 rounded-full transition-all duration-500 ${cnCategoryColor(cat.category)}`}
+                        style={{ width: `${catPercentage}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </CardContent>
         </Card>
       )}
